@@ -34,6 +34,11 @@ class CallableTest extends Specification {
             result == 42
     }
 
+    def 'submit callable as closure with cast with inline assertion'() {
+        expect:
+            executorService.submit({ return 42 } as Callable<Integer>).get() == null  //treated as Runnable
+    }
+
     def 'submit reference to closure coerced to callable'() {
         given:
             Callable<Integer> task = { return 42 } as Callable<Integer>
