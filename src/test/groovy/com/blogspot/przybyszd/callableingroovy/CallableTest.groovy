@@ -1,5 +1,6 @@
 package com.blogspot.przybyszd.callableingroovy
 
+import spock.lang.AutoCleanup
 import spock.lang.Specification
 
 import java.util.concurrent.Callable
@@ -8,6 +9,7 @@ import java.util.concurrent.Executors
 
 class CallableTest extends Specification {
 
+    @AutoCleanup('shutdown')
     ExecutorService executorService = Executors.newSingleThreadExecutor()
 
     def 'submit callable as MyJob object'() {
@@ -22,13 +24,32 @@ class CallableTest extends Specification {
 
     def 'submit callable as closure'() {
         expect:
-            executorService.submit { 42 }.get() == null
+            executorService.submit { 42 }.get() == null //treated as Runnable
     }
 
     def 'submit callable as closure with cast'() {
         when:
-            int result = executorService.submit({ return 42 } as Callable<Integer>).get()
+            Integer result = executorService.submit({ return 42 } as Callable<Integer>).get()
         then:
             result == 42
+    }
+
+    def 'submit callable as closure with cast with inline assertion'() {
+        expect:
+            executorService.submit({ return 42 } as Callable<Integer>).get() == null  //treated as Runnable
+    }
+
+    def 'submit reference to closure coerced to callable'() {
+        given:
+            Callable<Integer> task = { return 42 } as Callable<Integer>
+        expect:
+            executorService.submit(task).get() == null //treated as Runnable
+    }
+
+    def 'submit reference to map coerced to callable'() {
+        given:
+            Callable<Integer> task = [call: { 42 }] as Callable<Integer>
+        expect:
+            executorService.submit(task).get() == 42
     }
 }
